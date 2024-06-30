@@ -1,21 +1,66 @@
 use clap::{Parser, Subcommand};
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[derive(Parser)]
+#[command(about = "A CLI app for managing your server.")]
 struct Cli {
-    command: String,
-
     #[command(subcommand)]
-    subcommand: Option<Commands>,
+    command: Commands,
 }
 
-#[derive(Subcommand, Debug, Clone)]
+#[derive(Subcommand)]
 enum Commands {
-    Get { key: String },
-    Set { key: String, value: String },
+    /// Show logs
+    Logs,
+    /// Set a configuration variable
+    #[command(alias = "config:set")]
+    ConfigSet {
+        /// The configuration variable in the form KEY=VALUE
+        var: String,
+    },
+    /// Get a configuration variable
+    #[command(alias = "config:get")]
+    ConfigGet {
+        /// The configuration variable name
+        key: String,
+    },
+    /// Stop the application
+    Stop,
+    /// Deploy the application
+    Deploy,
+    /// Destroy the application
+    Destroy,
 }
 
 fn main() {
     let cli = Cli::parse();
-    println!("{:?}", cli);
+
+    match &cli.command {
+        Commands::Logs => {
+            println!("Showing logs...");
+        }
+        Commands::ConfigSet { var } => {
+            println!("Setting configuration: {}", var);
+            // Parse `var` into key and value
+            let parts: Vec<&str> = var.split('=').collect();
+            if parts.len() == 2 {
+                let key = parts[0];
+                let value = parts[1];
+                println!("Setting {} to {}", key, value);
+            } else {
+                eprintln!("Invalid format. Use KEY=VALUE");
+            }
+        }
+        Commands::ConfigGet { key } => {
+            println!("Getting configuration for: {}", key);
+        }
+        Commands::Stop => {
+            println!("Stopping application...");
+        }
+        Commands::Deploy => {
+            println!("Deploying application...");
+        }
+        Commands::Destroy => {
+            println!("Destroying application...");
+        }
+    }
 }
