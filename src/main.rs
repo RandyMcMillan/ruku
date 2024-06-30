@@ -1,7 +1,6 @@
 mod deploy;
 
 use std::env;
-
 use clap::{Parser, Subcommand};
 
 use deploy::Deploy;
@@ -65,7 +64,7 @@ fn main() {
         Commands::Deploy => {
             println!("Detecting path...");
             let path = env::current_dir().unwrap_or_else(|e| {
-                eprintln!("Error getting current directory: {}", e);
+                eprintln!("\n Ruku was unable to resolve the current directory path");
                 std::process::exit(1);
             });
             let deploy = Deploy::new(path);

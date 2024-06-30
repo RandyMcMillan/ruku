@@ -1,4 +1,3 @@
-use std::env;
 use std::path::{Path, PathBuf};
 
 use dotenvy::dotenv;
@@ -30,8 +29,9 @@ impl Deploy {
             dotenv().expect(".env file not found");
         }
 
-        for (n,v) in env::vars() {
-            println!("{}: {}", n, v);
-        }
+        let config = envy::from_env::<Config>().unwrap_or_else(|e| {
+            eprintln!("\n Ruku was unable to resolve the PORT environment variable");
+            std::process::exit(1);
+        });
     }
 }
