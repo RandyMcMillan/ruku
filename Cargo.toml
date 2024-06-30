@@ -1,8 +1,10 @@
 [package]
 name = "ruku"
 version = "0.1.0"
-authors = ["joker666"]
+authors = ["joker666 <mr.k779@outlook.com>"]
+description = "A tiny PaaS. Ruku allows you to do git push deployments to your own servers."
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
