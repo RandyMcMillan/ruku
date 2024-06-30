@@ -1,6 +1,7 @@
 [package]
 name = "ruku"
 version = "0.1.0"
+authors = ["joker666"]
 edition = "2021"
 
 [dependencies]
