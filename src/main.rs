@@ -1,4 +1,9 @@
+mod deploy;
+
+use std::env;
 use clap::{Parser, Subcommand};
+
+use deploy::Deploy;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -31,7 +36,8 @@ enum Commands {
     Destroy,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -57,7 +63,13 @@ fn main() {
             println!("Stopping application...");
         }
         Commands::Deploy => {
-            println!("Deploying application...");
+            println!("Detecting path...");
+            let path = env::current_dir().unwrap_or_else(|_| {
+                eprintln!("\n Ruku was unable to resolve the current directory path");
+                std::process::exit(1);
+            });
+            let deploy = Deploy::new(path);
+            deploy.run().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
