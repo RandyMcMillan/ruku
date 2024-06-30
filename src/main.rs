@@ -1,4 +1,10 @@
+mod deploy;
+
+use std::env;
+
 use clap::{Parser, Subcommand};
+
+use deploy::Deploy;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -57,7 +63,13 @@ fn main() {
             println!("Stopping application...");
         }
         Commands::Deploy => {
-            println!("Deploying application...");
+            println!("Detecting path...");
+            let path = env::current_dir().unwrap_or_else(|e| {
+                eprintln!("Error getting current directory: {}", e);
+                std::process::exit(1);
+            });
+            let deploy = Deploy::new(path);
+            deploy.run();
         }
         Commands::Destroy => {
             println!("Destroying application...");
