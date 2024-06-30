@@ -36,7 +36,8 @@ enum Commands {
     Destroy,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -63,12 +64,12 @@ fn main() {
         }
         Commands::Deploy => {
             println!("Detecting path...");
-            let path = env::current_dir().unwrap_or_else(|e| {
+            let path = env::current_dir().unwrap_or_else(|_| {
                 eprintln!("\n Ruku was unable to resolve the current directory path");
                 std::process::exit(1);
             });
             let deploy = Deploy::new(path);
-            deploy.run();
+            deploy.run().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
