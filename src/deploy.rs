@@ -3,8 +3,7 @@ use std::path::{Path, PathBuf};
 use dotenvy::dotenv;
 use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
-use nixpacks::nixpacks::plan::generator::GeneratePlanOptions;
-use nixpacks::nixpacks::plan::BuildPlan;
+use nixpacks::nixpacks::plan::{BuildPlan, generator::GeneratePlanOptions};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -74,7 +73,6 @@ impl Deploy {
             env,
             &options,
             build_options,
-        )
-        .await?;
+        ).await.expect("\n Ruku was unable to create docker image");
     }
 }
