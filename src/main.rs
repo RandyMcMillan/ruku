@@ -11,14 +11,14 @@ struct Cli {
 enum Commands {
     /// Show logs
     Logs,
-    /// Set a configuration variable
-    #[command(alias = "config:set")]
+    /// Set a configuration variable, e.g, VAR=12
+    #[command(name = "config:set")]
     ConfigSet {
         /// The configuration variable in the form KEY=VALUE
         var: String,
     },
     /// Get a configuration variable
-    #[command(alias = "config:get")]
+    #[command(name = "config:get")]
     ConfigGet {
         /// The configuration variable name
         key: String,
