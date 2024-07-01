@@ -15,7 +15,12 @@ pub struct Deploy {
 
 impl Deploy {
     pub fn new(log: Logger, name: String, path: String, config: Config) -> Deploy {
-        Deploy { log, name, path, config }
+        Deploy {
+            log,
+            name,
+            path,
+            config,
+        }
     }
 
     pub async fn run(&self) {
@@ -28,8 +33,10 @@ impl Deploy {
             plan: Some(cli_plan),
             config_file: None,
         };
+        let mut image_version = "latest";
         let mut tags: Vec<String> = vec![];
         if let Some(version) = &self.config.version {
+            image_version = version;
             tags.push(format!("{}:{}", self.name, version));
         }
 
@@ -57,5 +64,8 @@ impl Deploy {
         create_docker_image(&self.path, env, &options, build_options)
             .await
             .expect("\n Ruku was unable to create docker image");
+
+        self.log
+            .step(format!("Image created successfully with tag {}:{}", self.name, image_version).as_str());
     }
 }
