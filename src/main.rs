@@ -1,9 +1,12 @@
 mod deploy;
 
 use std::env;
-use clap::{Parser, Subcommand};
+use std::path::Path;
 
+use clap::{Parser, Subcommand};
 use deploy::Deploy;
+use dotenvy::dotenv;
+use serde::Deserialize;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -36,8 +39,35 @@ enum Commands {
     Destroy,
 }
 
+#[derive(Deserialize, Debug)]
+struct Config {
+    port: u16,
+    name: Option<String>,
+}
+
 #[tokio::main]
 async fn main() {
+    println!("Detecting path...");
+    let path = env::current_dir().unwrap_or_else(|_| {
+        eprintln!("Ruku was unable to resolve the current directory path");
+        std::process::exit(1);
+    });
+
+    // Check if a .env file exists in the current path
+    let dotenv_path = Path::new(".env");
+    if dotenv_path.exists() {
+        dotenv().expect(".env file not found");
+    }
+
+    let config = envy::from_env::<Config>().unwrap_or_else(|_| {
+        eprintln!("Ruku was unable to resolve the PORT environment variable");
+        std::process::exit(1);
+    });
+
+    let app_name = config
+        .name
+        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap().to_string());
+
     let cli = Cli::parse();
 
     match &cli.command {
@@ -63,12 +93,7 @@ async fn main() {
             println!("Stopping application...");
         }
         Commands::Deploy => {
-            println!("Detecting path...");
-            let path = env::current_dir().unwrap_or_else(|_| {
-                eprintln!("\n Ruku was unable to resolve the current directory path");
-                std::process::exit(1);
-            });
-            let deploy = Deploy::new(path);
+            let deploy = Deploy::new(app_name, path.display().to_string(), config.port);
             deploy.run().await;
         }
         Commands::Destroy => {
