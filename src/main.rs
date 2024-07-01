@@ -57,8 +57,8 @@ async fn main() {
 
     log.step("Checking if docker is running...");
     let docker = load_docker(&log).await;
-    let version = docker.version().await.unwrap();
-    log.step(format!("Docker version: {:?}", version).as_str());
+    let version = docker.version().await.unwrap().version.unwrap();
+    log.step(format!("Docker engine version: {}", version).as_str());
 
     // Check if a .env file exists in the current path
     let dotenv_path = Path::new(".env");
