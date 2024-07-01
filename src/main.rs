@@ -1,14 +1,13 @@
 mod deploy;
 mod logger;
+mod model;
 
 use std::env;
 use std::path::Path;
 
 use clap::{Parser, Subcommand};
-use colored::Colorize;
 use deploy::Deploy;
 use dotenvy::dotenv;
-use serde::Deserialize;
 use logger::Logger;
 
 #[derive(Parser)]
@@ -42,16 +41,10 @@ enum Commands {
     Destroy,
 }
 
-#[derive(Deserialize, Debug)]
-struct Config {
-    port: u16,
-    name: Option<String>,
-}
-
 #[tokio::main]
 async fn main() {
     let log = Logger::new();
-    log.step("Detecting path...", );
+    log.step("Detecting path...");
 
     let path = env::current_dir().unwrap_or_else(|_| {
         eprintln!("Ruku was unable to resolve the current directory path");
@@ -64,13 +57,14 @@ async fn main() {
         dotenv().expect(".env file not found");
     }
 
-    let config = envy::from_env::<Config>().unwrap_or_else(|_| {
+    let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
         eprintln!("Ruku was unable to resolve the PORT environment variable");
         std::process::exit(1);
     });
 
     let app_name = config
         .name
+        .clone()
         .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap().to_string());
 
     let cli = Cli::parse();
@@ -98,7 +92,8 @@ async fn main() {
             println!("Stopping application...");
         }
         Commands::Deploy => {
-            let deploy = Deploy::new(log, app_name, path.display().to_string(), config.port);
+            log.section("Starting deployment");
+            let deploy = Deploy::new(log, app_name, path.display().to_string(), config);
             deploy.run().await;
         }
         Commands::Destroy => {
