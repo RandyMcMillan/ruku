@@ -3,18 +3,19 @@ use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
 use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
 use crate::logger::Logger;
+use crate::model::Config;
 
 pub struct Deploy {
     log: Logger,
 
     name: String,
     path: String,
-    port: u16,
+    config: Config,
 }
 
 impl Deploy {
-    pub fn new(log: Logger, name: String, path: String, port: u16) -> Deploy {
-        Deploy { log, name, path, port }
+    pub fn new(log: Logger, name: String, path: String, config: Config) -> Deploy {
+        Deploy { log, name, path, config }
     }
 
     pub async fn run(&self) {
