@@ -30,7 +30,7 @@ impl Deploy {
         };
         let mut tags: Vec<String> = vec![];
         if let Some(version) = &self.config.version {
-            tags.push(version.to_string());
+            tags.push(format!("{}:{}", self.name, version));
         }
 
         let build_options = &DockerBuilderOptions {
