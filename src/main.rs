@@ -1,12 +1,15 @@
 mod deploy;
+mod logger;
 
 use std::env;
 use std::path::Path;
 
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use deploy::Deploy;
 use dotenvy::dotenv;
 use serde::Deserialize;
+use logger::Logger;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -47,7 +50,9 @@ struct Config {
 
 #[tokio::main]
 async fn main() {
-    println!("Detecting path...");
+    let log = Logger::new();
+    log.step("Detecting path...", );
+
     let path = env::current_dir().unwrap_or_else(|_| {
         eprintln!("Ruku was unable to resolve the current directory path");
         std::process::exit(1);
@@ -93,7 +98,7 @@ async fn main() {
             println!("Stopping application...");
         }
         Commands::Deploy => {
-            let deploy = Deploy::new(app_name, path.display().to_string(), config.port);
+            let deploy = Deploy::new(log, app_name, path.display().to_string(), config.port);
             deploy.run().await;
         }
         Commands::Destroy => {

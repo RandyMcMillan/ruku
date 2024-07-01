@@ -10,6 +10,7 @@ repository = "https://github.com/Joker666/ruku"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
+colored = "2.1.0"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 nixpacks = "1.24.1"
