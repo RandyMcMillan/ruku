@@ -2,19 +2,23 @@ use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
 use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
+use crate::logger::Logger;
+
 pub struct Deploy {
+    log: Logger,
+
     name: String,
     path: String,
     port: u16,
 }
 
 impl Deploy {
-    pub fn new(name: String, path: String, port: u16) -> Deploy {
-        Deploy { name, path, port }
+    pub fn new(log: Logger, name: String, path: String, port: u16) -> Deploy {
+        Deploy { log, name, path, port }
     }
 
     pub async fn run(&self) {
-        println!("Deploying from {}", self.path);
+        self.log.step(format!("Deploying from {}", self.path).as_str());
 
         // Nix pack
         let env: Vec<&str> = vec![];
