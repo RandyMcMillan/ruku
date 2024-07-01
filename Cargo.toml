@@ -9,6 +9,7 @@ homepage = "https://github.com/Joker666/ruku"
 repository = "https://github.com/Joker666/ruku"
 
 [dependencies]
+bollard = "0.16.1"
 clap = { version = "4.5.7", features = ["derive"] }
 colored = "2.1.0"
 dotenvy = "0.15.7"

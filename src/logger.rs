@@ -15,7 +15,12 @@ impl Logger {
 
     /// Pretty-print the given log line.
     pub fn step(&self, msg: &str) {
-        println!("=> {}", msg.black().dimmed());
+        println!("=> {}", msg.cyan());
+    }
+
+    /// Pretty-print error message
+    pub fn error(&self, msg: &str) {
+        eprintln!("=> {}", msg.red());
     }
 
     /// Pretty-print the given log line as a warning and exit the app.

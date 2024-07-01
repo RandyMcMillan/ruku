@@ -5,16 +5,16 @@ use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 use crate::logger::Logger;
 use crate::model::Config;
 
-pub struct Deploy {
-    log: Logger,
+pub struct Deploy<'a> {
+    log: &'a Logger,
 
     name: String,
     path: String,
     config: Config,
 }
 
-impl Deploy {
-    pub fn new(log: Logger, name: String, path: String, config: Config) -> Deploy {
+impl<'a> Deploy<'a> {
+    pub fn new(log: &Logger, name: String, path: String, config: Config) -> Deploy {
         Deploy {
             log,
             name,
@@ -24,7 +24,7 @@ impl Deploy {
     }
 
     pub async fn run(&self) {
-        self.log.step(format!("Deploying from {}", self.path).as_str());
+        self.log.step(format!("Running from {}", self.path).as_str());
 
         // Nix pack
         let env: Vec<&str> = vec![];
