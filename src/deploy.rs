@@ -28,11 +28,16 @@ impl Deploy {
             plan: Some(cli_plan),
             config_file: None,
         };
+        let mut tags: Vec<String> = vec![];
+        if let Some(version) = &self.config.version {
+            tags.push(version.to_string());
+        }
+
         let build_options = &DockerBuilderOptions {
             name: Option::from(self.name.clone()),
             out_dir: None,
             print_dockerfile: false,
-            tags: vec![],
+            tags,
             labels: vec![],
             quiet: false,
             cache_key: None,
