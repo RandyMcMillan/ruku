@@ -76,6 +76,6 @@ impl<'a> Deploy<'a> {
             image_name_with_version
         ));
 
-        self.container.run()
+        self.container.run().await;
     }
 }
