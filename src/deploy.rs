@@ -24,7 +24,7 @@ impl<'a> Deploy<'a> {
     }
 
     pub async fn run(&self) {
-        self.log.step(format!("Running from {}", self.path).as_str());
+        self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack
         let env: Vec<&str> = vec![];
@@ -63,6 +63,6 @@ impl<'a> Deploy<'a> {
             .expect("\n Ruku was unable to create docker image");
 
         self.log
-            .step(format!("Image created successfully with tag {}", image_name_with_version).as_str());
+            .step(&format!("Image created successfully with tag {}", image_name_with_version));
     }
 }

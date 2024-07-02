@@ -67,7 +67,7 @@ async fn main() {
         })
         .version
         .unwrap();
-    log.step(format!("Docker engine version: {}", version).as_str());
+    log.step(&format!("Docker engine version: {}", version));
 
     // Check if a .env file exists in the current path
     let dotenv_path = Path::new(".env");
