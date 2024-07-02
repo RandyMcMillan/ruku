@@ -1,5 +1,5 @@
-use bollard::container::{CreateContainerOptions, StartContainerOptions};
-use bollard::models::{ContainerCreateResponse, HostConfig, PortBinding, PortMap};
+use bollard::container::{CreateContainerOptions, ListContainersOptions, StartContainerOptions};
+use bollard::models::{ContainerCreateResponse, ContainerSummary, HostConfig, PortBinding, PortMap};
 use bollard::Docker;
 
 use crate::logger::Logger;
@@ -28,6 +28,7 @@ impl<'a> Container<'a> {
 
     pub async fn run(&self) {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
+        self.get_or_create().await;
         let container = self.create(image_name_with_version).await;
 
         // Start the container
@@ -39,6 +40,23 @@ impl<'a> Container<'a> {
                 std::process::exit(1);
             });
         self.log.step(&format!("Started container with id: {}", container.id));
+    }
+
+    pub async fn get_or_create(&self) -> Option<ContainerSummary> {
+        let mut filters = HashMap::new();
+        filters.insert("name", vec![self.name]);
+
+        let options = Some(ListContainersOptions {
+            all: true,
+            filters,
+            limit: Some(1),
+            ..Default::default()
+        });
+        let containers = self.docker.list_containers(options).await.unwrap_or_else(|_| {
+            self.log.error("Failed to list containers");
+            std::process::exit(1);
+        });
+        containers.into_iter().next()
     }
 
     pub async fn create(&self, image_name: String) -> ContainerCreateResponse {
