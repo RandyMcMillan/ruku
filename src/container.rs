@@ -29,16 +29,27 @@ impl<'a> Container<'a> {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
 
         if let Some(container) = self.get().await {
-            self.start_container(container.id.unwrap().as_str()).await;
+            self.start(container.id.unwrap().as_str()).await;
         } else {
             let container = self.create(image_name_with_version).await;
-            self.start_container(&container.id).await;
+            self.start(&container.id).await;
         }
     }
 
-    async fn start_container(&self, container_id: &str) {
+    async fn stop(&self, container_id: &str) {
         self.docker
-            .start_container(container_id, None::<StartContainerOptions<String>>)
+            .stop_container(container_id, None)
+            .await
+            .unwrap_or_else(|_| {
+                self.log.error("Failed to stop container");
+                std::process::exit(1);
+            });
+        self.log.step(&format!("Stopped container with id: {}", container_id));
+    }
+
+    async fn start(&self, container_id: &str) {
+        self.docker
+            .start_container(container_id, None)
             .await
             .unwrap_or_else(|_| {
                 self.log.error("Failed to start container");
