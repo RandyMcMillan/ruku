@@ -28,7 +28,6 @@ impl<'a> Container<'a> {
 
     pub async fn run(&self) {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
-        self.get_or_create().await;
         let container = self.create(image_name_with_version).await;
 
         // Start the container
@@ -42,7 +41,7 @@ impl<'a> Container<'a> {
         self.log.step(&format!("Started container with id: {}", container.id));
     }
 
-    pub async fn get_or_create(&self) -> Option<ContainerSummary> {
+    pub async fn get(&self) -> Option<ContainerSummary> {
         let mut filters = HashMap::new();
         filters.insert("name", vec![self.name]);
 
