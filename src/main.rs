@@ -82,10 +82,10 @@ async fn main() {
 
     let app_name = config
         .name
-        .clone()
-        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap().to_string());
+        .as_deref()
+        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
 
-    let deploy = Deploy::new(&log, app_name, path.display().to_string(), config);
+    let deploy = Deploy::new(&log, app_name.to_string(), path.display().to_string(), config);
 
     let cli = Cli::parse();
 
@@ -126,9 +126,8 @@ async fn main() {
 }
 
 async fn load_docker(log: &Logger) -> Docker {
-    let docker = Docker::connect_with_local_defaults().unwrap_or_else(|_| {
+    Docker::connect_with_local_defaults().unwrap_or_else(|_| {
         log.error("Ruku was unable to connect to docker");
         std::process::exit(1);
-    });
-    docker
+    })
 }
