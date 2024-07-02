@@ -10,7 +10,6 @@ use std::collections::HashMap;
 
 pub struct Container<'a> {
     log: &'a Logger,
-
     name: &'a str,
     docker: &'a Docker,
     config: &'a Config,
@@ -28,17 +27,24 @@ impl<'a> Container<'a> {
 
     pub async fn run(&self) {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
-        let container = self.create(image_name_with_version).await;
 
-        // Start the container
+        if let Some(container) = self.get().await {
+            self.start_container(container.id.unwrap().as_str()).await;
+        } else {
+            let container = self.create(image_name_with_version).await;
+            self.start_container(&container.id).await;
+        }
+    }
+
+    async fn start_container(&self, container_id: &str) {
         self.docker
-            .start_container(&container.id, None::<StartContainerOptions<String>>)
+            .start_container(container_id, None::<StartContainerOptions<String>>)
             .await
             .unwrap_or_else(|_| {
                 self.log.error("Failed to start container");
                 std::process::exit(1);
             });
-        self.log.step(&format!("Started container with id: {}", container.id));
+        self.log.step(&format!("Started container with id: {}", container_id));
     }
 
     pub async fn get(&self) -> Option<ContainerSummary> {
