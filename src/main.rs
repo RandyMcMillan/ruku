@@ -9,6 +9,7 @@ use std::path::Path;
 
 use bollard::Docker;
 use clap::{Parser, Subcommand};
+use container::Container;
 use deploy::Deploy;
 use dotenvy::dotenv;
 use logger::Logger;
@@ -85,7 +86,8 @@ async fn main() {
         .as_deref()
         .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
 
-    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config);
+    let container = Container::new(&log, app_name, &docker, &config);
+    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config, &container);
 
     let cli = Cli::parse();
 

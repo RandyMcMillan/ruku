@@ -1,6 +1,6 @@
 use bollard::container::{CreateContainerOptions, StartContainerOptions};
-use bollard::Docker;
 use bollard::models::{HostConfig, PortBinding, PortMap};
+use bollard::Docker;
 
 use crate::logger::Logger;
 use crate::misc::get_image_name_with_version;
