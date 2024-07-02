@@ -6,6 +6,8 @@ use crate::logger::Logger;
 use crate::misc::get_image_name_with_version;
 use crate::model::Config;
 
+use std::collections::HashMap;
+
 pub struct Container<'a> {
     log: &'a Logger,
 
@@ -32,20 +34,25 @@ impl<'a> Container<'a> {
             platform: None,
         };
 
+        let exposed_port = format!("{}/tcp", self.config.port);
         let mut host_config = HostConfig::default();
         let mut port_bindings = PortMap::new();
         port_bindings.insert(
-            self.config.port.to_string(),
+            exposed_port.clone(),
             Some(vec![PortBinding {
-                host_ip: Some("0.0.0.0".to_string()),
+                host_ip: None,
                 host_port: Some(self.config.port.to_string()),
             }]),
         );
         host_config.port_bindings = Some(port_bindings);
 
+        let mut exposed_ports_map: HashMap<String, HashMap<(), ()>> = HashMap::new();
+        exposed_ports_map.insert(exposed_port, HashMap::new());
+
         let create_container_config = bollard::container::Config {
             image: Some(image_name_with_version),
             host_config: Some(host_config),
+            exposed_ports: Some(exposed_ports_map),
             ..Default::default()
         };
 
