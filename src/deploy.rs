@@ -1,44 +1,39 @@
-use std::path::{Path, PathBuf};
-
-use dotenvy::dotenv;
 use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
-use nixpacks::nixpacks::plan::{BuildPlan, generator::GeneratePlanOptions};
-use serde::Deserialize;
+use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
-#[derive(Deserialize, Debug)]
-struct Config {
-    port: u16,
-    name: Option<String>,
+use crate::container::Container;
+use crate::logger::Logger;
+use crate::misc::get_image_name_with_version;
+use crate::model::Config;
+
+pub struct Deploy<'a> {
+    log: &'a Logger,
+    name: &'a str,
+    path: &'a str,
+    config: &'a Config,
+    container: &'a Container<'a>,
 }
 
-pub struct Deploy {
-    pub path: PathBuf,
-}
-
-impl Deploy {
-    pub fn new(path: PathBuf) -> Deploy {
-        Deploy { path }
+impl<'a> Deploy<'a> {
+    pub fn new(
+        log: &'a Logger,
+        name: &'a str,
+        path: &'a str,
+        config: &'a Config,
+        container: &'a Container<'a>,
+    ) -> Deploy<'a> {
+        Deploy {
+            log,
+            name,
+            path,
+            config,
+            container,
+        }
     }
 
     pub async fn run(&self) {
-        println!("Deploying from {}", self.path.display());
-
-        // Check if a .env file exists in the current path
-        let dotenv_path = Path::new(".env");
-        if dotenv_path.exists() {
-            dotenv().expect(".env file not found");
-        }
-
-        let config = envy::from_env::<Config>().unwrap_or_else(|_| {
-            eprintln!("\n Ruku was unable to resolve the PORT environment variable");
-            std::process::exit(1);
-        });
-
-        let mut app_name = config.name;
-        if app_name.is_none() {
-            app_name = Option::from(self.path.file_name().unwrap().to_str().unwrap().to_string())
-        }
+        self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack
         let env: Vec<&str> = vec![];
@@ -47,11 +42,14 @@ impl Deploy {
             plan: Some(cli_plan),
             config_file: None,
         };
-        let build_options = &DockerBuilderOptions {
-            name: app_name,
+
+        let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
+
+        let build_options = DockerBuilderOptions {
+            name: Some(self.name.to_string()),
             out_dir: None,
             print_dockerfile: false,
-            tags: vec![],
+            tags: vec![image_name_with_version.clone()],
             labels: vec![],
             quiet: false,
             cache_key: None,
@@ -68,11 +66,16 @@ impl Deploy {
             docker_host: None,
             docker_tls_verify: None,
         };
-        create_docker_image(
-            &self.path.display().to_string(),
-            env,
-            &options,
-            build_options,
-        ).await.expect("\n Ruku was unable to create docker image");
+
+        create_docker_image(self.path, env, &options, &build_options)
+            .await
+            .expect("\n Ruku was unable to create docker image");
+
+        self.log.step(&format!(
+            "Image created successfully with tag {}",
+            image_name_with_version
+        ));
+
+        self.container.run().await;
     }
 }

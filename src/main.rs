@@ -1,9 +1,18 @@
+mod container;
 mod deploy;
+mod logger;
+mod misc;
+mod model;
 
 use std::env;
-use clap::{Parser, Subcommand};
+use std::path::Path;
 
+use bollard::Docker;
+use clap::{Parser, Subcommand};
+use container::Container;
 use deploy::Deploy;
+use dotenvy::dotenv;
+use logger::Logger;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -28,16 +37,58 @@ enum Commands {
         /// The configuration variable name
         key: String,
     },
-    /// Stop the application
-    Stop,
+    /// Run the application
+    Run,
     /// Deploy the application
     Deploy,
+    /// Stop the application
+    Stop,
     /// Destroy the application
     Destroy,
 }
 
 #[tokio::main]
 async fn main() {
+    let log = Logger::default();
+    log.step("Detecting path...");
+
+    let path = env::current_dir().unwrap_or_else(|_| {
+        log.error("Ruku was unable to resolve the current directory path");
+        std::process::exit(1);
+    });
+
+    log.step("Checking if docker is running...");
+    let docker = load_docker(&log).await;
+    let version = docker
+        .version()
+        .await
+        .unwrap_or_else(|_| {
+            log.error("Ruku was unable to connect to docker");
+            std::process::exit(1);
+        })
+        .version
+        .unwrap();
+    log.step(&format!("Docker engine version: {}", version));
+
+    // Check if a .env file exists in the current path
+    let dotenv_path = Path::new(".env");
+    if dotenv_path.exists() {
+        dotenv().expect(".env file not found");
+    }
+
+    let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
+        log.error("Ruku was unable to resolve the PORT environment variable");
+        std::process::exit(1);
+    });
+
+    let app_name = config
+        .name
+        .as_deref()
+        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
+
+    let container = Container::new(&log, app_name, &docker, &config);
+    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config, &container);
+
     let cli = Cli::parse();
 
     match &cli.command {
@@ -53,26 +104,33 @@ async fn main() {
                 let value = parts[1];
                 println!("Setting {} to {}", key, value);
             } else {
-                eprintln!("Invalid format. Use KEY=VALUE");
+                log.error("Invalid format. Use KEY=VALUE");
             }
         }
         Commands::ConfigGet { key } => {
             println!("Getting configuration for: {}", key);
         }
-        Commands::Stop => {
-            println!("Stopping application...");
+        Commands::Run => {
+            log.section("Running application");
+            deploy.run().await;
         }
         Commands::Deploy => {
-            println!("Detecting path...");
-            let path = env::current_dir().unwrap_or_else(|_| {
-                eprintln!("\n Ruku was unable to resolve the current directory path");
-                std::process::exit(1);
-            });
-            let deploy = Deploy::new(path);
+            log.section("Starting deployment");
             deploy.run().await;
+        }
+        Commands::Stop => {
+            log.section("Stopping application...");
+            container.end().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
         }
     }
+}
+
+async fn load_docker(log: &Logger) -> Docker {
+    Docker::connect_with_local_defaults().unwrap_or_else(|_| {
+        log.error("Ruku was unable to connect to docker");
+        std::process::exit(1);
+    })
 }
