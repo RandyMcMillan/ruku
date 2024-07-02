@@ -3,7 +3,7 @@ use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
 use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
 use crate::logger::Logger;
-use crate::misc::get_image_with_version;
+use crate::misc::get_image_name_with_version;
 use crate::model::Config;
 
 pub struct Deploy<'a> {
@@ -35,13 +35,13 @@ impl<'a> Deploy<'a> {
             config_file: None,
         };
 
-        let image_with_version = get_image_with_version(&self.name, &self.config.version);
+        let image_name_with_version = get_image_name_with_version(&self.name, &self.config.version);
 
         let build_options = &DockerBuilderOptions {
             name: Option::from(self.name.clone()),
             out_dir: None,
             print_dockerfile: false,
-            tags: vec![image_with_version.clone()],
+            tags: vec![image_name_with_version.clone()],
             labels: vec![],
             quiet: false,
             cache_key: None,
@@ -63,6 +63,6 @@ impl<'a> Deploy<'a> {
             .expect("\n Ruku was unable to create docker image");
 
         self.log
-            .step(format!("Image created successfully with tag {}", image_with_version).as_str());
+            .step(format!("Image created successfully with tag {}", image_name_with_version).as_str());
     }
 }
