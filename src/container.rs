@@ -47,6 +47,17 @@ impl<'a> Container<'a> {
         self.log.step(&format!("Stopped container with id: {}", container_id));
     }
 
+    async fn remove(&self, container_id: &str) {
+        self.docker
+            .remove_container(container_id, None)
+            .await
+            .unwrap_or_else(|_| {
+                self.log.error("Failed to remove container");
+                std::process::exit(1);
+            });
+        self.log.step(&format!("Removed container with id: {}", container_id));
+    }
+
     async fn start(&self, container_id: &str) {
         self.docker
             .start_container(container_id, None)
