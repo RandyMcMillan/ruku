@@ -60,6 +60,16 @@ impl<'a> Container<'a> {
         }
     }
 
+    pub async fn end(&self) {
+        if let Some(container) = self.get().await {
+            let container_id = container.id.as_deref().unwrap_or_else(|| {
+                self.log.error("Failed to get container id");
+                std::process::exit(1);
+            });
+            self.stop_and_remove(container_id).await;
+        }
+    }
+
     async fn stop_and_remove(&self, container_id: &str) {
         self.stop(container_id).await;
         self.remove(container_id).await;

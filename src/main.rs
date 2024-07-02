@@ -119,7 +119,8 @@ async fn main() {
             deploy.run().await;
         }
         Commands::Stop => {
-            println!("Stopping application...");
+            log.section("Stopping application...");
+            container.end().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
