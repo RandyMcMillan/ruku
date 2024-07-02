@@ -1,4 +1,4 @@
-use bollard::container::{CreateContainerOptions, ListContainersOptions};
+use bollard::container::{CreateContainerOptions, ListContainersOptions, StartContainerOptions};
 use bollard::models::{
     ContainerCreateResponse, ContainerStateStatusEnum, ContainerSummary, HostConfig, PortBinding, PortMap,
 };
@@ -31,22 +31,29 @@ impl<'a> Container<'a> {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
 
         if let Some(container) = self.get().await {
-            let container_id = container.id.unwrap().as_str();
-            match ContainerStateStatusEnum::from_str(container.state.unwrap().as_str()).unwrap() {
+            let container_id = container.id.as_ref().map(|id| id.as_str()).unwrap_or_else(|| {
+                self.log.error("Failed to get container id");
+                std::process::exit(1);
+            });
+            let container_state = container.state.as_ref().map(|state| state.as_str()).unwrap_or_else(|| {
+                self.log.error("Failed to get container state");
+                std::process::exit(1);
+            });
+            match ContainerStateStatusEnum::from_str(container_state).unwrap() {
                 ContainerStateStatusEnum::EMPTY => {}
                 ContainerStateStatusEnum::CREATED | ContainerStateStatusEnum::PAUSED => {
-                    self.stop(container_id).await;
+                    self.stop(&container_id).await;
                 }
                 ContainerStateStatusEnum::RUNNING | ContainerStateStatusEnum::RESTARTING => {
-                    self.stop(container_id).await;
-                    self.remove(container_id).await;
+                    self.stop(&container_id).await;
+                    self.remove(&container_id).await;
                 }
                 ContainerStateStatusEnum::REMOVING => {}
                 ContainerStateStatusEnum::EXITED | ContainerStateStatusEnum::DEAD => {
-                    self.remove(container_id).await;
+                    self.remove(&container_id).await;
                 }
             }
-            self.start(container_id).await;
+            self.start(&container_id).await;
         } else {
             let container = self.create(image_name_with_version).await;
             self.start(&container.id).await;
@@ -77,7 +84,7 @@ impl<'a> Container<'a> {
 
     async fn start(&self, container_id: &str) {
         self.docker
-            .start_container(container_id, None)
+            .start_container(container_id, None::<StartContainerOptions<String>>)
             .await
             .unwrap_or_else(|_| {
                 self.log.error("Failed to start container");
