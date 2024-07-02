@@ -8,14 +8,13 @@ use crate::model::Config;
 
 pub struct Deploy<'a> {
     log: &'a Logger,
-
-    name: String,
-    path: String,
-    config: Config,
+    name: &'a str,
+    path: &'a str,
+    config: &'a Config,
 }
 
 impl<'a> Deploy<'a> {
-    pub fn new(log: &Logger, name: String, path: String, config: Config) -> Deploy {
+    pub fn new(log: &'a Logger, name: &'a str, path: &'a str, config: &'a Config) -> Deploy<'a> {
         Deploy {
             log,
             name,
@@ -35,10 +34,10 @@ impl<'a> Deploy<'a> {
             config_file: None,
         };
 
-        let image_name_with_version = get_image_name_with_version(&self.name, &self.config.version);
+        let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
 
-        let build_options = &DockerBuilderOptions {
-            name: Option::from(self.name.clone()),
+        let build_options = DockerBuilderOptions {
+            name: Some(self.name.to_string()),
             out_dir: None,
             print_dockerfile: false,
             tags: vec![image_name_with_version.clone()],
@@ -58,7 +57,8 @@ impl<'a> Deploy<'a> {
             docker_host: None,
             docker_tls_verify: None,
         };
-        create_docker_image(&self.path, env, &options, build_options)
+
+        create_docker_image(self.path, env, &options, &build_options)
             .await
             .expect("\n Ruku was unable to create docker image");
 
