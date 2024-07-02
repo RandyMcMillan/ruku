@@ -85,7 +85,7 @@ async fn main() {
         .as_deref()
         .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
 
-    let deploy = Deploy::new(&log, app_name.to_string(), path.display().to_string(), config);
+    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config);
 
     let cli = Cli::parse();
 
