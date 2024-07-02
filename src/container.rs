@@ -1,5 +1,5 @@
 use bollard::container::{CreateContainerOptions, StartContainerOptions};
-use bollard::models::{HostConfig, PortBinding, PortMap};
+use bollard::models::{ContainerCreateResponse, HostConfig, PortBinding, PortMap};
 use bollard::Docker;
 
 use crate::logger::Logger;
@@ -28,7 +28,20 @@ impl<'a> Container<'a> {
 
     pub async fn run(&self) {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
+        let container = self.create(image_name_with_version).await;
 
+        // Start the container
+        self.docker
+            .start_container(&container.id, None::<StartContainerOptions<String>>)
+            .await
+            .unwrap_or_else(|_| {
+                self.log.error("Failed to start container");
+                std::process::exit(1);
+            });
+        self.log.step(&format!("Started container with id: {}", container.id));
+    }
+
+    pub async fn create(&self, image_name: String) -> ContainerCreateResponse {
         let create_options = CreateContainerOptions {
             name: self.name,
             platform: None,
@@ -50,7 +63,7 @@ impl<'a> Container<'a> {
         exposed_ports_map.insert(exposed_port, HashMap::new());
 
         let create_container_config = bollard::container::Config {
-            image: Some(image_name_with_version),
+            image: Some(image_name),
             host_config: Some(host_config),
             exposed_ports: Some(exposed_ports_map),
             ..Default::default()
@@ -66,15 +79,6 @@ impl<'a> Container<'a> {
                 std::process::exit(1);
             });
         self.log.step(&format!("Created container with id: {}", container.id));
-
-        // Start the container
-        self.docker
-            .start_container(&container.id, None::<StartContainerOptions<String>>)
-            .await
-            .unwrap_or_else(|_| {
-                self.log.error("Failed to start container");
-                std::process::exit(1);
-            });
-        self.log.step(&format!("Started container with id: {}", container.id));
+        container
     }
 }
