@@ -1,12 +1,14 @@
-use bollard::container::{CreateContainerOptions, ListContainersOptions, StartContainerOptions};
-use bollard::models::{ContainerCreateResponse, ContainerSummary, HostConfig, PortBinding, PortMap};
+use bollard::container::{CreateContainerOptions, ListContainersOptions};
+use bollard::models::{
+    ContainerCreateResponse, ContainerStateStatusEnum, ContainerSummary, HostConfig, PortBinding, PortMap,
+};
 use bollard::Docker;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::logger::Logger;
 use crate::misc::get_image_name_with_version;
 use crate::model::Config;
-
-use std::collections::HashMap;
 
 pub struct Container<'a> {
     log: &'a Logger,
@@ -29,7 +31,22 @@ impl<'a> Container<'a> {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
 
         if let Some(container) = self.get().await {
-            self.start(container.id.unwrap().as_str()).await;
+            let container_id = container.id.unwrap().as_str();
+            match ContainerStateStatusEnum::from_str(container.state.unwrap().as_str()).unwrap() {
+                ContainerStateStatusEnum::EMPTY => {}
+                ContainerStateStatusEnum::CREATED | ContainerStateStatusEnum::PAUSED => {
+                    self.stop(container_id).await;
+                }
+                ContainerStateStatusEnum::RUNNING | ContainerStateStatusEnum::RESTARTING => {
+                    self.stop(container_id).await;
+                    self.remove(container_id).await;
+                }
+                ContainerStateStatusEnum::REMOVING => {}
+                ContainerStateStatusEnum::EXITED | ContainerStateStatusEnum::DEAD => {
+                    self.remove(container_id).await;
+                }
+            }
+            self.start(container_id).await;
         } else {
             let container = self.create(image_name_with_version).await;
             self.start(&container.id).await;
