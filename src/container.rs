@@ -53,7 +53,8 @@ impl<'a> Container<'a> {
                     self.remove(&container_id).await;
                 }
             }
-            self.start(&container_id).await;
+            let new_container = self.create(image_name_with_version).await;
+            self.start(&new_container.id).await;
         } else {
             let container = self.create(image_name_with_version).await;
             self.start(&container.id).await;
