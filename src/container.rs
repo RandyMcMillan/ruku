@@ -31,26 +31,25 @@ impl<'a> Container<'a> {
         let image_name_with_version = get_image_name_with_version(self.name, &self.config.version);
 
         if let Some(container) = self.get().await {
-            let container_id = container.id.as_ref().map(|id| id.as_str()).unwrap_or_else(|| {
+            let container_id = container.id.as_deref().unwrap_or_else(|| {
                 self.log.error("Failed to get container id");
                 std::process::exit(1);
             });
-            let container_state = container.state.as_ref().map(|state| state.as_str()).unwrap_or_else(|| {
+            let container_state = container.state.as_deref().unwrap_or_else(|| {
                 self.log.error("Failed to get container state");
                 std::process::exit(1);
             });
             match ContainerStateStatusEnum::from_str(container_state).unwrap() {
                 ContainerStateStatusEnum::EMPTY => {}
-                ContainerStateStatusEnum::CREATED | ContainerStateStatusEnum::PAUSED => {
-                    self.stop(&container_id).await;
-                }
                 ContainerStateStatusEnum::RUNNING | ContainerStateStatusEnum::RESTARTING => {
-                    self.stop(&container_id).await;
-                    self.remove(&container_id).await;
+                    self.stop_and_remove(container_id).await;
                 }
                 ContainerStateStatusEnum::REMOVING => {}
-                ContainerStateStatusEnum::EXITED | ContainerStateStatusEnum::DEAD => {
-                    self.remove(&container_id).await;
+                ContainerStateStatusEnum::CREATED
+                | ContainerStateStatusEnum::PAUSED
+                | ContainerStateStatusEnum::EXITED
+                | ContainerStateStatusEnum::DEAD => {
+                    self.remove(container_id).await;
                 }
             }
             let new_container = self.create(image_name_with_version).await;
@@ -59,6 +58,11 @@ impl<'a> Container<'a> {
             let container = self.create(image_name_with_version).await;
             self.start(&container.id).await;
         }
+    }
+
+    async fn stop_and_remove(&self, container_id: &str) {
+        self.stop(container_id).await;
+        self.remove(container_id).await;
     }
 
     async fn stop(&self, container_id: &str) {
