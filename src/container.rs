@@ -1,13 +1,15 @@
+use crate::logger::Logger;
 use bollard::Docker;
 
-pub struct Container {
+pub struct Container<'a> {
+    log: &'a Logger,
+
+    name: String,
     docker: Docker,
 }
 
-impl Container {
-    pub fn new(docker: Docker) -> Container {
-        Container {
-            docker,
-        }
+impl<'a> Container<'a> {
+    pub fn new(log: &Logger, name: String, docker: Docker) -> Container {
+        Container { log, name, docker }
     }
 }

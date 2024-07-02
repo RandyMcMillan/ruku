@@ -1,6 +1,7 @@
 mod container;
 mod deploy;
 mod logger;
+mod misc;
 mod model;
 
 use std::env;
@@ -57,10 +58,15 @@ async fn main() {
 
     log.step("Checking if docker is running...");
     let docker = load_docker(&log).await;
-    let version = docker.version().await.unwrap_or_else(|_| {
-        log.error("Ruku was unable to connect to docker");
-        std::process::exit(1);
-    }).version.unwrap();
+    let version = docker
+        .version()
+        .await
+        .unwrap_or_else(|_| {
+            log.error("Ruku was unable to connect to docker");
+            std::process::exit(1);
+        })
+        .version
+        .unwrap();
     log.step(format!("Docker engine version: {}", version).as_str());
 
     // Check if a .env file exists in the current path

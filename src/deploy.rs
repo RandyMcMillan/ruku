@@ -3,6 +3,7 @@ use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
 use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
 use crate::logger::Logger;
+use crate::misc::get_image_with_version;
 use crate::model::Config;
 
 pub struct Deploy<'a> {
@@ -33,18 +34,14 @@ impl<'a> Deploy<'a> {
             plan: Some(cli_plan),
             config_file: None,
         };
-        let mut image_version = "latest";
-        let mut tags: Vec<String> = vec![];
-        if let Some(version) = &self.config.version {
-            image_version = version;
-            tags.push(format!("{}:{}", self.name, version));
-        }
+
+        let image_with_version = get_image_with_version(&self.name, &self.config.version);
 
         let build_options = &DockerBuilderOptions {
             name: Option::from(self.name.clone()),
             out_dir: None,
             print_dockerfile: false,
-            tags,
+            tags: vec![image_with_version.clone()],
             labels: vec![],
             quiet: false,
             cache_key: None,
@@ -66,6 +63,6 @@ impl<'a> Deploy<'a> {
             .expect("\n Ruku was unable to create docker image");
 
         self.log
-            .step(format!("Image created successfully with tag {}:{}", self.name, image_version).as_str());
+            .step(format!("Image created successfully with tag {}", image_with_version).as_str());
     }
 }

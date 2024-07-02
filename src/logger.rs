@@ -22,12 +22,6 @@ impl Logger {
     pub fn error(&self, msg: &str) {
         eprintln!("=> {}", msg.red());
     }
-
-    /// Pretty-print the given log line as a warning and exit the app.
-    pub fn fatal(&self, msg: &str) {
-        eprintln!("=> {}", msg.red());
-        std::process::exit(1);
-    }
 }
 
 impl Default for Logger {
