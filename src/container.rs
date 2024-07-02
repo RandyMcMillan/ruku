@@ -67,6 +67,8 @@ impl<'a> Container<'a> {
                 std::process::exit(1);
             });
             self.stop_and_remove(container_id).await;
+        } else {
+            self.log.error("No application is running");
         }
     }
 
@@ -131,14 +133,14 @@ impl<'a> Container<'a> {
             platform: None,
         };
 
-        let exposed_port = format!("{}/tcp", self.config.port);
+        let exposed_port = format!("{}/tcp", self.config.port.unwrap());
         let mut host_config = HostConfig::default();
         let mut port_bindings = PortMap::new();
         port_bindings.insert(
             exposed_port.clone(),
             Some(vec![PortBinding {
                 host_ip: None,
-                host_port: Some(self.config.port.to_string()),
+                host_port: Some(self.config.port.unwrap().to_string()),
             }]),
         );
         host_config.port_bindings = Some(port_bindings);

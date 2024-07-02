@@ -77,7 +77,7 @@ async fn main() {
     }
 
     let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
-        log.error("Ruku was unable to resolve the PORT environment variable");
+        log.error("Ruku was unable to resolve the environment variables");
         std::process::exit(1);
     });
 
