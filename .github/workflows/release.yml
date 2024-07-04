@@ -46,8 +46,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-binary
-          path: target/${{ matrix.target }}/release
+          name: ${{ github.event.repository.name }}-${{ matrix.target }}
+          path: ${{ github.event.repository.name }}-${{ matrix.target }}
 
   release:
     needs: build
