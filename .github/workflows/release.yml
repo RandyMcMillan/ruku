@@ -68,4 +68,4 @@ jobs:
           draft: false
           generate_release_notes: true
           files: |
-            ./*-${{ matrix.target }}
+            ./**/${{ github.event.repository.name }}-*
