@@ -67,3 +67,5 @@ jobs:
         with:
           draft: false
           generate_release_notes: true
+          files: |
+            ./*-${{ matrix.target }}
