@@ -33,6 +33,11 @@ impl<'a> Deploy<'a> {
     }
 
     pub async fn run(&self) {
+        if self.config.port.is_none() {
+            self.log.error("No port specified, skipping deployment");
+            std::process::exit(1);
+        }
+
         self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack
