@@ -39,11 +39,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache crates
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cargo-hack
-
       - name: Build and upload
         uses: taiki-e/upload-rust-binary-action@v1
         with:
