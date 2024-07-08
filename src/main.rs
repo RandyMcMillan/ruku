@@ -1,5 +1,7 @@
+mod config;
 mod container;
 mod deploy;
+mod git;
 mod logger;
 mod misc;
 mod model;
@@ -13,6 +15,7 @@ use container::Container;
 use deploy::Deploy;
 use dotenvy::dotenv;
 use logger::Logger;
+use config::Config;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -78,6 +81,11 @@ async fn main() {
 
     let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
         log.error("Ruku was unable to resolve the environment variables");
+        std::process::exit(1);
+    });
+
+    let server_config = Config::new().unwrap_or_else(|e| {
+        log.error(&format!("Error loading server config: {}", e));
         std::process::exit(1);
     });
 
