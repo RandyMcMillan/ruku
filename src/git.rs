@@ -16,7 +16,7 @@ impl<'a> Git<'a> {
         Self { config }
     }
 
-    fn cmd_git_receive_pack(&self, app: &str) -> io::Result<()> {
+    pub fn cmd_git_receive_pack(&self, app: &str) -> io::Result<()> {
         let app = sanitize_app_name(app);
         let hook_path = self.config.git_root.join(&app).join("hooks").join("post-receive");
 
@@ -58,7 +58,21 @@ cat | RUKU_ROOT="{}" {} git-hook {}"#,
         Ok(())
     }
 
-    fn cmd_git_hook(&self, app: &str) -> io::Result<()> {
+    pub fn cmd_git_upload_pack(&self, app: &str) -> io::Result<()> {
+        let app = sanitize_app_name(app);
+
+        let git_command = format!("git-upload-pack '{}'", app);
+
+        Command::new("git-shell")
+            .arg("-c")
+            .arg(&git_command)
+            .current_dir(self.config.git_root.display().to_string())
+            .status()?;
+
+        Ok(())
+    }
+
+    pub fn cmd_git_hook(&self, app: &str) -> io::Result<()> {
         let app = sanitize_app_name(app);
         let repo_path = self.config.git_root.join(&app);
         let app_path = self.config.apps_root.join(&app);

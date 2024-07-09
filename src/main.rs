@@ -48,6 +48,24 @@ enum Commands {
     Stop,
     /// Destroy the application
     Destroy,
+    /// Git hook
+    #[command(name = "git-hook")]
+    GitHook {
+        /// The git repository name
+        repo: String,
+    },
+    /// Git receive pack
+    #[command(name = "git-receive-pack")]
+    GitReceivePack {
+        /// The git repository name
+        repo: String,
+    },
+    /// Git upload pack
+    #[command(name = "git-upload-pack")]
+    GitUploadPack {
+        /// The git repository name
+        repo: String,
+    },
 }
 
 #[tokio::main]
@@ -132,6 +150,15 @@ async fn main() {
         }
         Commands::Destroy => {
             println!("Destroying application...");
+        }
+        Commands::GitHook { repo } => {
+            println!("Running git hook for {}", repo);
+        }
+        Commands::GitReceivePack { repo } => {
+            println!("Running git receive pack for {}", repo);
+        }
+        Commands::GitUploadPack { repo } => {
+            println!("Running git upload pack for {}", repo);
         }
     }
 }
