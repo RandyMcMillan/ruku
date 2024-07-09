@@ -1,14 +1,15 @@
-mod server_config;
 mod container;
 mod deploy;
 mod git;
 mod logger;
 mod misc;
 mod model;
+mod server_config;
 
 use std::env;
 use std::path::Path;
 
+use crate::git::Git;
 use bollard::Docker;
 use clap::{Parser, Subcommand};
 use container::Container;
@@ -107,6 +108,8 @@ async fn main() {
         std::process::exit(1);
     });
 
+    let git = Git::new(&server_config);
+
     let app_name = config
         .name
         .as_deref()
@@ -153,12 +156,15 @@ async fn main() {
         }
         Commands::GitHook { repo } => {
             println!("Running git hook for {}", repo);
+            git.cmd_git_hook(repo).unwrap();
         }
         Commands::GitReceivePack { repo } => {
             println!("Running git receive pack for {}", repo);
+            git.cmd_git_receive_pack(repo).unwrap();
         }
         Commands::GitUploadPack { repo } => {
             println!("Running git upload pack for {}", repo);
+            git.cmd_git_upload_pack(repo).unwrap();
         }
     }
 }
