@@ -1,4 +1,4 @@
-mod config;
+mod server_config;
 mod container;
 mod deploy;
 mod git;
@@ -15,7 +15,7 @@ use container::Container;
 use deploy::Deploy;
 use dotenvy::dotenv;
 use logger::Logger;
-use config::Config;
+use server_config::ServerConfig;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -84,7 +84,7 @@ async fn main() {
         std::process::exit(1);
     });
 
-    let server_config = Config::new().unwrap_or_else(|e| {
+    let server_config = ServerConfig::new().unwrap_or_else(|e| {
         log.error(&format!("Error loading server config: {}", e));
         std::process::exit(1);
     });
