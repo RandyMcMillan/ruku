@@ -108,7 +108,7 @@ async fn main() {
         std::process::exit(1);
     });
 
-    let git = Git::new(&server_config);
+    let git = Git::new(&log, &server_config);
 
     let app_name = config
         .name
@@ -155,15 +155,15 @@ async fn main() {
             println!("Destroying application...");
         }
         Commands::GitHook { repo } => {
-            println!("Running git hook for {}", repo);
+            log.step("Git hook");
             git.cmd_git_hook(repo).unwrap();
         }
         Commands::GitReceivePack { repo } => {
-            println!("Running git receive pack for {}", repo);
+            log.step("Git receive pack");
             git.cmd_git_receive_pack(repo).unwrap();
         }
         Commands::GitUploadPack { repo } => {
-            println!("Running git upload pack for {}", repo);
+            log.step("Git upload pack");
             git.cmd_git_upload_pack(repo).unwrap();
         }
     }
