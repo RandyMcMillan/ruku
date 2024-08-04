@@ -1,6 +1,6 @@
 use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
-use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
+use nixpacks::nixpacks::plan::{BuildPlan, generator::GeneratePlanOptions};
 
 use crate::container::Container;
 use crate::logger::Logger;
@@ -41,7 +41,7 @@ impl<'a> Deploy<'a> {
         self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack
-        let env: Vec<&str> = vec![];
+        let envs: Vec<&str> = vec![];
         let cli_plan = BuildPlan::default();
         let options = GeneratePlanOptions {
             plan: Some(cli_plan),
@@ -72,7 +72,7 @@ impl<'a> Deploy<'a> {
             docker_tls_verify: None,
         };
 
-        create_docker_image(self.path, env, &options, &build_options)
+        create_docker_image(self.path, envs, &options, &build_options)
             .await
             .expect("\n Ruku was unable to create docker image");
 
