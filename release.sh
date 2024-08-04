@@ -15,9 +15,7 @@ update_version_file() {
     local version=$1
     local file="src/version.rs"
     if [[ -f $file ]]; then
-        temp_file=$(mktemp)
-        sed "s/pub const VERSION: &str = \".*\";/pub const VERSION: \&str = \"$version\";/" "$file" >"$temp_file"
-        mv "$temp_file" "$file"
+        sed -i '' "s/pub const VERSION: &str = \".*\";/pub const VERSION: \&str = \"$version\";/" "$file"
     else
         echo "File $file does not exist."
         exit 1
