@@ -1,21 +1,21 @@
+use bollard::Docker;
+use clap::{Parser, Subcommand};
+
+use logger::Logger;
+use server_config::ServerConfig;
+
+use crate::git::Git;
+
 mod container;
 mod deploy;
+mod git;
 mod logger;
 mod misc;
 mod model;
-
-use std::env;
-use std::path::Path;
-
-use bollard::Docker;
-use clap::{Parser, Subcommand};
-use container::Container;
-use deploy::Deploy;
-use dotenvy::dotenv;
-use logger::Logger;
+mod server_config;
 
 #[derive(Parser)]
-#[command(about = "A CLI app for managing your server.")]
+#[command(version, about = "A CLI app for managing your server.")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -45,50 +45,36 @@ enum Commands {
     Stop,
     /// Destroy the application
     Destroy,
+    /// Git hook
+    #[command(name = "git-hook")]
+    GitHook {
+        /// The git repository name
+        repo: String,
+    },
+    /// Git receive pack
+    #[command(name = "git-receive-pack")]
+    GitReceivePack {
+        /// The git repository name
+        repo: String,
+    },
+    /// Git upload pack
+    #[command(name = "git-upload-pack")]
+    GitUploadPack {
+        /// The git repository name
+        repo: String,
+    },
 }
 
 #[tokio::main]
 async fn main() {
     let log = Logger::default();
-    log.step("Detecting path...");
 
-    let path = env::current_dir().unwrap_or_else(|_| {
-        log.error("Ruku was unable to resolve the current directory path");
+    let server_config = ServerConfig::new().unwrap_or_else(|e| {
+        log.error(&format!("Error loading server config: {}", e));
         std::process::exit(1);
     });
 
-    log.step("Checking if docker is running...");
-    let docker = load_docker(&log).await;
-    let version = docker
-        .version()
-        .await
-        .unwrap_or_else(|_| {
-            log.error("Ruku was unable to connect to docker");
-            std::process::exit(1);
-        })
-        .version
-        .unwrap();
-    log.step(&format!("Docker engine version: {}", version));
-
-    // Check if a .env file exists in the current path
-    let dotenv_path = Path::new(".env");
-    if dotenv_path.exists() {
-        dotenv().expect(".env file not found");
-    }
-
-    let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
-        log.error("Ruku was unable to resolve the environment variables");
-        std::process::exit(1);
-    });
-
-    let app_name = config
-        .name
-        .as_deref()
-        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
-
-    let container = Container::new(&log, app_name, &docker, &config);
-    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config, &container);
-
+    let git = Git::new(&log, &server_config);
     let cli = Cli::parse();
 
     match &cli.command {
@@ -112,20 +98,45 @@ async fn main() {
         }
         Commands::Run => {
             log.section("Running application");
-            deploy.run().await;
         }
         Commands::Deploy => {
             log.section("Starting deployment");
-            deploy.run().await;
         }
         Commands::Stop => {
             log.section("Stopping application...");
-            container.end().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
         }
+        Commands::GitHook { repo } => {
+            git.cmd_git_hook(repo);
+        }
+        Commands::GitReceivePack { repo } => {
+            log.section("... RUKU ...");
+            git.cmd_git_receive_pack(repo);
+        }
+        Commands::GitUploadPack { repo } => {
+            log.section("... RUKU ...");
+            git.cmd_git_upload_pack(repo);
+        }
     }
+}
+
+async fn get_docker(log: &Logger) -> Docker {
+    let docker = load_docker(log).await;
+
+    let version = docker
+        .version()
+        .await
+        .unwrap_or_else(|_| {
+            log.error("Ruku was unable to connect to docker");
+            std::process::exit(1);
+        })
+        .version
+        .unwrap();
+    log.step(&format!("Docker engine version: {}", version));
+
+    docker
 }
 
 async fn load_docker(log: &Logger) -> Docker {

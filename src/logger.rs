@@ -10,12 +10,12 @@ impl Logger {
 
     /// Pretty-print the given log section title.
     pub fn section(&self, msg: &str) {
-        println!("=== {} ===", msg.magenta().bold());
+        eprintln!("=== {} ===", msg.magenta().bold());
     }
 
     /// Pretty-print the given log line.
     pub fn step(&self, msg: &str) {
-        println!("=> {}", msg.cyan());
+        eprintln!("=> {}", msg.cyan());
     }
 
     /// Pretty-print error message

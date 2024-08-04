@@ -41,7 +41,7 @@ impl<'a> Deploy<'a> {
         self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack
-        let env: Vec<&str> = vec![];
+        let envs: Vec<&str> = vec![];
         let cli_plan = BuildPlan::default();
         let options = GeneratePlanOptions {
             plan: Some(cli_plan),
@@ -70,11 +70,16 @@ impl<'a> Deploy<'a> {
             verbose: false,
             docker_host: None,
             docker_tls_verify: None,
+            docker_output: None,
+            add_host: vec![],
         };
 
-        create_docker_image(self.path, env, &options, &build_options)
+        create_docker_image(self.path, envs, &options, &build_options)
             .await
-            .expect("\n Ruku was unable to create docker image");
+            .unwrap_or_else(|e| {
+                self.log.error(&format!("Error creating image: {}", e));
+                std::process::exit(1);
+            });
 
         self.log.step(&format!(
             "Image created successfully with tag {}",
