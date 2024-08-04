@@ -13,6 +13,7 @@ mod logger;
 mod misc;
 mod model;
 mod server_config;
+mod version;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -63,12 +64,13 @@ enum Commands {
         /// The git repository name
         repo: String,
     },
+    /// Show version
+    Version,
 }
 
 #[tokio::main]
 async fn main() {
     let log = Logger::default();
-    log.section("... RUKU ...");
 
     let server_config = ServerConfig::new().unwrap_or_else(|e| {
         log.error(&format!("Error loading server config: {}", e));
@@ -110,16 +112,18 @@ async fn main() {
             println!("Destroying application...");
         }
         Commands::GitHook { repo } => {
-            log.step("Git hook");
             git.cmd_git_hook(repo);
         }
         Commands::GitReceivePack { repo } => {
-            log.step("Git receive pack");
+            log.section("... RUKU ...");
             git.cmd_git_receive_pack(repo);
         }
         Commands::GitUploadPack { repo } => {
-            log.step("Git upload pack");
+            log.section("... RUKU ...");
             git.cmd_git_upload_pack(repo);
+        }
+        Commands::Version => {
+            println!("{}", version::VERSION);
         }
     }
 }
