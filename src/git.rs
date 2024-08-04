@@ -134,8 +134,8 @@ cat | RUKU_ROOT="{}" {} git-hook {}
     fn checkout_latest(&self, app_path: &Path, new_rev: &str) {
         self.log.step("Checking out the latest code");
         run_cmd!(
-            git --git-dir=$app_path/.git fetch --quiet;
-            git --git-dir=$app_path/.git reset --hard $new_rev;
+            git --git-dir=$app_path/.git --work-tree=$app_path/ fetch --quiet;
+            git --git-dir=$app_path/.git --work-tree=$app_path/ reset --hard $new_rev;
         )
         .unwrap_or_else(|e| {
             self.log.error(&format!("Error checking out latest code: {}", e));
