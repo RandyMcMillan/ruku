@@ -56,7 +56,7 @@ impl<'a> Deploy<'a> {
             print_dockerfile: false,
             tags: vec![image_name_with_version.clone()],
             labels: vec![],
-            quiet: false,
+            quiet: true,
             cache_key: None,
             no_cache: false,
             inline_cache: false,

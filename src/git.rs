@@ -4,7 +4,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::{fs, io};
 
-use cmd_lib::run_cmd;
+use cmd_lib::{run_cmd, run_fun};
 
 use crate::logger::Logger;
 use crate::misc::sanitize_app_name;
@@ -105,7 +105,7 @@ cat | RUKU_ROOT="{}" {} git-hook {}
             if parts.len() != 3 {
                 continue;
             }
-            let (_, new_rev, _) = (parts[0], parts[1], parts[2]);
+            let (_, new_rev, branch) = (parts[0], parts[1], parts[2]);
 
             if !app_path.exists() {
                 fs::create_dir_all(&app_path).unwrap_or_else(|e| {
@@ -127,12 +127,36 @@ cat | RUKU_ROOT="{}" {} git-hook {}
                 });
             }
 
-            self.checkout_latest(&app_path, new_rev);
+            self.checkout_latest(&app_path, new_rev, branch);
         }
     }
 
-    fn checkout_latest(&self, app_path: &Path, new_rev: &str) {
-        self.log.step("Checking out the latest code");
+    fn checkout_latest(&self, app_path: &Path, new_rev: &str, branch: &str) {
+        let branch = branch.trim_start_matches("refs/heads/");
+        self.log
+            .step(&format!("Checking out the latest code from branch: {}", branch));
+
+        // Get the current branch
+        let current_branch = run_fun!(
+            git --git-dir=$app_path/.git --work-tree=$app_path/ rev-parse --abbrev-ref HEAD
+        )
+        .unwrap_or_else(|e| {
+            self.log.error(&format!("Error getting current branch: {}", e));
+            std::process::exit(1);
+        });
+
+        // Check if the current branch is the same as the target branch
+        if current_branch.trim() != branch {
+            run_cmd!(
+                git --git-dir=$app_path/.git --work-tree=$app_path/ checkout $branch;
+            )
+            .unwrap_or_else(|e| {
+                self.log.error(&format!("Error checking out latest code: {}", e));
+                std::process::exit(1);
+            });
+        }
+
+        // Checkout the latest code
         run_cmd!(
             git --git-dir=$app_path/.git --work-tree=$app_path/ fetch --quiet;
             git --git-dir=$app_path/.git --work-tree=$app_path/ reset --hard $new_rev;
