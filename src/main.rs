@@ -1,3 +1,11 @@
+use bollard::Docker;
+use clap::{Parser, Subcommand};
+
+use logger::Logger;
+use server_config::ServerConfig;
+
+use crate::git::Git;
+
 mod container;
 mod deploy;
 mod git;
@@ -5,18 +13,6 @@ mod logger;
 mod misc;
 mod model;
 mod server_config;
-
-use std::env;
-use std::path::Path;
-
-use crate::git::Git;
-use bollard::Docker;
-use clap::{Parser, Subcommand};
-use container::Container;
-use deploy::Deploy;
-use dotenvy::dotenv;
-use logger::Logger;
-use server_config::ServerConfig;
 
 #[derive(Parser)]
 #[command(about = "A CLI app for managing your server.")]
@@ -72,36 +68,7 @@ enum Commands {
 #[tokio::main]
 async fn main() {
     let log = Logger::default();
-    log.step("Detecting path...");
-
-    let path = env::current_dir().unwrap_or_else(|_| {
-        log.error("Ruku was unable to resolve the current directory path");
-        std::process::exit(1);
-    });
-
-    log.step("Checking if docker is running...");
-    let docker = load_docker(&log).await;
-    let version = docker
-        .version()
-        .await
-        .unwrap_or_else(|_| {
-            log.error("Ruku was unable to connect to docker");
-            std::process::exit(1);
-        })
-        .version
-        .unwrap();
-    log.step(&format!("Docker engine version: {}", version));
-
-    // Check if a .env file exists in the current path
-    let dotenv_path = Path::new(".env");
-    if dotenv_path.exists() {
-        dotenv().expect(".env file not found");
-    }
-
-    let config = envy::from_env::<model::Config>().unwrap_or_else(|_| {
-        log.error("Ruku was unable to resolve the environment variables");
-        std::process::exit(1);
-    });
+    log.section("... RUKU ...");
 
     let server_config = ServerConfig::new().unwrap_or_else(|e| {
         log.error(&format!("Error loading server config: {}", e));
@@ -109,15 +76,6 @@ async fn main() {
     });
 
     let git = Git::new(&log, &server_config);
-
-    let app_name = config
-        .name
-        .as_deref()
-        .unwrap_or_else(|| path.file_name().unwrap().to_str().unwrap());
-
-    let container = Container::new(&log, app_name, &docker, &config);
-    let deploy = Deploy::new(&log, app_name, path.as_path().to_str().unwrap(), &config, &container);
-
     let cli = Cli::parse();
 
     match &cli.command {
@@ -141,15 +99,12 @@ async fn main() {
         }
         Commands::Run => {
             log.section("Running application");
-            deploy.run().await;
         }
         Commands::Deploy => {
             log.section("Starting deployment");
-            deploy.run().await;
         }
         Commands::Stop => {
             log.section("Stopping application...");
-            container.end().await;
         }
         Commands::Destroy => {
             println!("Destroying application...");
@@ -167,6 +122,23 @@ async fn main() {
             git.cmd_git_upload_pack(repo).unwrap();
         }
     }
+}
+
+async fn get_docker(log: &Logger) -> Docker {
+    let docker = load_docker(log).await;
+
+    let version = docker
+        .version()
+        .await
+        .unwrap_or_else(|_| {
+            log.error("Ruku was unable to connect to docker");
+            std::process::exit(1);
+        })
+        .version
+        .unwrap();
+    log.step(&format!("Docker engine version: {}", version));
+
+    docker
 }
 
 async fn load_docker(log: &Logger) -> Docker {

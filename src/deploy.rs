@@ -70,11 +70,16 @@ impl<'a> Deploy<'a> {
             verbose: false,
             docker_host: None,
             docker_tls_verify: None,
+            docker_output: None,
+            add_host: vec![],
         };
 
         create_docker_image(self.path, envs, &options, &build_options)
             .await
-            .expect("\n Ruku was unable to create docker image");
+            .unwrap_or_else(|e| {
+                self.log.error(&format!("Error creating image: {}", e));
+                std::process::exit(1);
+            });
 
         self.log.step(&format!(
             "Image created successfully with tag {}",
