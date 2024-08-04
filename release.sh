@@ -40,6 +40,14 @@ update_version_file() {
     fi
 }
 
+# Commit and push the changes
+create_version_commit() {
+    local version=$1
+    git add src/version.rs
+    git commit -m "Release $version"
+    git push origin main
+}
+
 # Create a new git tag and push it
 create_and_push_git_tag() {
     local version=$1
@@ -55,6 +63,7 @@ read -r -p "Enter the version number: " version
 
 if validate_semver "$version"; then
     update_version_file "$version"
+    create_version_commit "$version"
     create_and_push_git_tag "$version"
     echo "Created a new release $version"
 else
