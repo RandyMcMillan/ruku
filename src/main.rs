@@ -127,7 +127,7 @@ async fn main() {
     }
 }
 
-async fn deploy(log: &Logger, repo: &String, server_config: ServerConfig) {
+async fn deploy(log: &Logger, repo: &str, server_config: ServerConfig) {
     log.section("Deploying application");
     let config = Config::default();
     let docker = get_docker(log).await;
@@ -135,8 +135,8 @@ async fn deploy(log: &Logger, repo: &String, server_config: ServerConfig) {
     let app = sanitize_app_name(repo);
     let app_path = server_config.apps_root.join(&app);
 
-    let container = Container::new(&log, repo, &docker, &config);
-    let deploy = Deploy::new(&log, repo, app_path.as_path().to_str().unwrap(), &config, &container);
+    let container = Container::new(log, repo, &docker, &config);
+    let deploy = Deploy::new(log, repo, app_path.as_path().to_str().unwrap(), &config, &container);
     deploy.run().await;
 }
 
