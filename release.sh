@@ -10,6 +10,24 @@ validate_semver() {
     fi
 }
 
+# Check if the git repository is clean
+check_git_clean() {
+    if [[ -n $(git status --porcelain) ]]; then
+        echo "Git repository has uncommitted changes. Please commit or stash them before proceeding."
+        exit 1
+    fi
+}
+
+# Check if the current branch is 'main'
+check_git_branch() {
+    local branch
+    branch=$(git symbolic-ref --short HEAD)
+    if [[ $branch != "main" ]]; then
+        echo "You are not on the 'main' branch. Please switch to the 'main' branch before proceeding."
+        exit 1
+    fi
+}
+
 # Update version in src/version.rs
 update_version_file() {
     local version=$1
@@ -31,6 +49,8 @@ create_and_push_git_tag() {
 }
 
 # Main script
+check_git_clean
+check_git_branch
 read -r -p "Enter the version number: " version
 
 if validate_semver "$version"; then
