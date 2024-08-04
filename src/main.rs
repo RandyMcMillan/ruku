@@ -13,10 +13,9 @@ mod logger;
 mod misc;
 mod model;
 mod server_config;
-mod version;
 
 #[derive(Parser)]
-#[command(about = "A CLI app for managing your server.")]
+#[command(version, about = "A CLI app for managing your server.")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -64,8 +63,6 @@ enum Commands {
         /// The git repository name
         repo: String,
     },
-    /// Show version
-    Version,
 }
 
 #[tokio::main]
@@ -121,9 +118,6 @@ async fn main() {
         Commands::GitUploadPack { repo } => {
             log.section("... RUKU ...");
             git.cmd_git_upload_pack(repo);
-        }
-        Commands::Version => {
-            println!("{}", version::VERSION);
         }
     }
 }

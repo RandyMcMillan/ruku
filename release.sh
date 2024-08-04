@@ -28,12 +28,12 @@ check_git_branch() {
     fi
 }
 
-# Update version in src/version.rs
+# Update version in Cargo.toml
 update_version_file() {
     local version=$1
-    local file="src/version.rs"
+    local file="Cargo.toml"
     if [[ -f $file ]]; then
-        sed -i '' "s/pub const VERSION: &str = \".*\";/pub const VERSION: \&str = \"$version\";/" "$file"
+        sed -i '' "s/^version = \".*\"/version = \"$version\"/" "$file"
     else
         echo "File $file does not exist."
         exit 1
@@ -43,7 +43,7 @@ update_version_file() {
 # Commit and push the changes
 create_version_commit() {
     local version=$1
-    git add src/version.rs
+    git add Cargo.toml Cargo.lock
     git commit -m "Release $version"
     git push origin main
 }
