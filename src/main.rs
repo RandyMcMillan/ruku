@@ -111,15 +111,15 @@ async fn main() {
         }
         Commands::GitHook { repo } => {
             log.step("Git hook");
-            git.cmd_git_hook(repo).unwrap();
+            git.cmd_git_hook(repo);
         }
         Commands::GitReceivePack { repo } => {
             log.step("Git receive pack");
-            git.cmd_git_receive_pack(repo).unwrap();
+            git.cmd_git_receive_pack(repo);
         }
         Commands::GitUploadPack { repo } => {
             log.step("Git upload pack");
-            git.cmd_git_upload_pack(repo).unwrap();
+            git.cmd_git_upload_pack(repo);
         }
     }
 }
