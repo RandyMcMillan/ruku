@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufRead, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use std::{fs, io};
+use std::{env, fs, io};
 
 use cmd_lib::{run_cmd, run_fun};
 
@@ -130,15 +130,19 @@ cat | RUKU_ROOT="{}" {} git-hook {}
             self.checkout_latest(&app_path, new_rev, branch);
         }
     }
-
     fn checkout_latest(&self, app_path: &Path, new_rev: &str, branch: &str) {
+        unsafe {
+            env::set_var("GIT_DIR", app_path.join(".git").display().to_string());
+            env::set_var("GIT_WORK_TREE", app_path.display().to_string());
+        }
+
         let branch = branch.trim_start_matches("refs/heads/");
         self.log
             .step(&format!("Checking out the latest code from branch: {}", branch));
 
         // Get the current branch
         let current_branch = run_fun!(
-            git --git-dir=$app_path/.git --work-tree=$app_path/ rev-parse --abbrev-ref HEAD
+            git rev-parse --abbrev-ref HEAD
         )
         .unwrap_or_else(|e| {
             self.log.error(&format!("Error getting current branch: {}", e));
@@ -148,7 +152,7 @@ cat | RUKU_ROOT="{}" {} git-hook {}
         // Check if the current branch is the same as the target branch
         if current_branch.trim() != branch {
             run_cmd!(
-                git --git-dir=$app_path/.git --work-tree=$app_path/ checkout $branch;
+                git checkout $branch;
             )
             .unwrap_or_else(|e| {
                 self.log.error(&format!("Error checking out latest code: {}", e));
@@ -158,8 +162,8 @@ cat | RUKU_ROOT="{}" {} git-hook {}
 
         // Checkout the latest code
         run_cmd!(
-            git --git-dir=$app_path/.git --work-tree=$app_path/ fetch --quiet;
-            git --git-dir=$app_path/.git --work-tree=$app_path/ reset --hard $new_rev;
+            git fetch --quiet;
+            git reset --hard $new_rev;
         )
         .unwrap_or_else(|e| {
             self.log.error(&format!("Error checking out latest code: {}", e));
