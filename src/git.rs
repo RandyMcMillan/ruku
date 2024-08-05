@@ -141,20 +141,14 @@ cat | RUKU_ROOT="{}" {} git-hook {}
             .step(&format!("Checking out the latest code from branch: {}", branch));
 
         // Get the current branch
-        let current_branch = run_fun!(
-            git rev-parse --abbrev-ref HEAD
-        )
-        .unwrap_or_else(|e| {
+        let current_branch = run_fun!(git rev-parse --abbrev-ref HEAD).unwrap_or_else(|e| {
             self.log.error(&format!("Error getting current branch: {}", e));
             std::process::exit(1);
         });
 
         // Check if the current branch is the same as the target branch
         if current_branch.trim() != branch {
-            run_cmd!(
-                git checkout $branch;
-            )
-            .unwrap_or_else(|e| {
+            run_cmd!(git checkout $branch).unwrap_or_else(|e| {
                 self.log.error(&format!("Error checking out latest code: {}", e));
                 std::process::exit(1);
             });
