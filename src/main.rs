@@ -4,7 +4,11 @@ use clap::{Parser, Subcommand};
 use logger::Logger;
 use server_config::ServerConfig;
 
+use crate::container::Container;
+use crate::deploy::Deploy;
 use crate::git::Git;
+use crate::misc::sanitize_app_name;
+use crate::model::Config;
 
 mod container;
 mod deploy;
@@ -110,6 +114,7 @@ async fn main() {
         }
         Commands::GitHook { repo } => {
             git.cmd_git_hook(repo);
+            deploy(&log, repo, server_config).await;
         }
         Commands::GitReceivePack { repo } => {
             log.section("... RUKU ...");
@@ -120,6 +125,19 @@ async fn main() {
             git.cmd_git_upload_pack(repo);
         }
     }
+}
+
+async fn deploy(log: &Logger, repo: &str, server_config: ServerConfig) {
+    log.section("Deploying application");
+    let config = Config::default();
+    let docker = get_docker(log).await;
+
+    let app = sanitize_app_name(repo);
+    let app_path = server_config.apps_root.join(&app);
+
+    let container = Container::new(log, repo, &docker, &config);
+    let deploy = Deploy::new(log, repo, app_path.as_path().to_str().unwrap(), &config, &container);
+    deploy.run().await;
 }
 
 async fn get_docker(log: &Logger) -> Docker {
