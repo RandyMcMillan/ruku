@@ -22,11 +22,12 @@ mod server_config;
 #[command(version, about = "A CLI app for managing your server.")]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Command,
 }
 
+/// Enum representing the various commands that can be executed by the CLI.
 #[derive(Subcommand)]
-enum Commands {
+enum Command {
     /// Show logs
     Logs,
     /// Set a configuration variable, e.g, VAR=12
@@ -82,10 +83,10 @@ async fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Logs => {
+        Command::Logs => {
             println!("Showing logs...");
         }
-        Commands::ConfigSet { var } => {
+        Command::ConfigSet { var } => {
             println!("Setting configuration: {}", var);
             // Parse `var` into key and value
             let parts: Vec<&str> = var.split('=').collect();
@@ -97,30 +98,30 @@ async fn main() {
                 log.error("Invalid format. Use KEY=VALUE");
             }
         }
-        Commands::ConfigGet { key } => {
+        Command::ConfigGet { key } => {
             println!("Getting configuration for: {}", key);
         }
-        Commands::Run => {
+        Command::Run => {
             log.section("Running application");
         }
-        Commands::Deploy => {
+        Command::Deploy => {
             log.section("Starting deployment");
         }
-        Commands::Stop => {
+        Command::Stop => {
             log.section("Stopping application...");
         }
-        Commands::Destroy => {
+        Command::Destroy => {
             println!("Destroying application...");
         }
-        Commands::GitHook { repo } => {
+        Command::GitHook { repo } => {
             git.cmd_git_hook(repo);
             deploy(&log, repo, server_config).await;
         }
-        Commands::GitReceivePack { repo } => {
+        Command::GitReceivePack { repo } => {
             log.section("... RUKU ...");
             git.cmd_git_receive_pack(repo);
         }
-        Commands::GitUploadPack { repo } => {
+        Command::GitUploadPack { repo } => {
             log.section("... RUKU ...");
             git.cmd_git_upload_pack(repo);
         }
