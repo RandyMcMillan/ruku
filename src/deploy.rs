@@ -1,17 +1,17 @@
 use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
-use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
+use nixpacks::nixpacks::plan::{BuildPlan, generator::GeneratePlanOptions};
 
 use crate::container::Container;
 use crate::logger::Logger;
 use crate::misc::get_image_name_with_version;
-use crate::model::Config;
+use crate::model::RukuConfig;
 
 pub struct Deploy<'a> {
     log: &'a Logger,
     name: &'a str,
     path: &'a str,
-    config: &'a Config,
+    config: &'a RukuConfig,
     container: &'a Container<'a>,
 }
 
@@ -20,7 +20,7 @@ impl<'a> Deploy<'a> {
         log: &'a Logger,
         name: &'a str,
         path: &'a str,
-        config: &'a Config,
+        config: &'a RukuConfig,
         container: &'a Container<'a>,
     ) -> Deploy<'a> {
         Deploy {
@@ -33,11 +33,6 @@ impl<'a> Deploy<'a> {
     }
 
     pub async fn run(&self) {
-        if self.config.port.is_none() {
-            self.log.error("No port specified, skipping deployment");
-            std::process::exit(1);
-        }
-
         self.log.step(&format!("Running from {}", self.path));
 
         // Nix pack

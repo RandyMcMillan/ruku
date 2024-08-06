@@ -1,3 +1,5 @@
+use std::fs;
+
 use bollard::Docker;
 use clap::{Parser, Subcommand};
 
@@ -8,7 +10,7 @@ use crate::container::Container;
 use crate::deploy::Deploy;
 use crate::git::Git;
 use crate::misc::sanitize_app_name;
-use crate::model::Config;
+use crate::model::RukuConfig;
 
 mod container;
 mod deploy;
@@ -115,7 +117,7 @@ async fn main() {
         }
         Command::GitHook { repo } => {
             git.cmd_git_hook(repo);
-            deploy(&log, repo, server_config).await;
+            deploy(&log, repo, &server_config).await;
         }
         Command::GitReceivePack { repo } => {
             log.section("... RUKU ...");
@@ -128,9 +130,9 @@ async fn main() {
     }
 }
 
-async fn deploy(log: &Logger, repo: &str, server_config: ServerConfig) {
+async fn deploy(log: &Logger, repo: &str, server_config: &ServerConfig) {
     log.section("Deploying application");
-    let config = Config::default();
+    let config = get_ruku_config(log, repo, server_config);
     let docker = get_docker(log).await;
 
     let app = sanitize_app_name(repo);
@@ -163,4 +165,34 @@ async fn load_docker(log: &Logger) -> Docker {
         log.error("Ruku was unable to connect to docker");
         std::process::exit(1);
     })
+}
+
+fn get_ruku_config(log: &Logger, repo: &str, server_config: &ServerConfig) -> RukuConfig {
+    let repo_path = server_config.apps_root.join(&repo);
+
+    // Check for the presence of ruku.yml file
+    let config_path = repo_path.join("ruku.yml");
+    if !config_path.exists() {
+        log.error("ruku.yml file is missing in the repository");
+        std::process::exit(1);
+    }
+
+    // Parse the ruku.yml file
+    let config_content = fs::read_to_string(&config_path).unwrap_or_else(|e| {
+        log.error(&format!("Error reading ruku.yml file: {}", e));
+        std::process::exit(1);
+    });
+
+    let config: RukuConfig = serde_yaml::from_str(&config_content).unwrap_or_else(|e| {
+        log.error(&format!("Error parsing ruku.yml file: {}", e));
+        std::process::exit(1);
+    });
+
+    // Validate that there is an entry with port: int
+    if config.port <= 0 {
+        log.error("Invalid port number in ruku.yml file");
+        std::process::exit(1);
+    }
+
+    config
 }

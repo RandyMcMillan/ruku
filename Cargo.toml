@@ -18,4 +18,5 @@ envy = "0.4.2"
 home = "0.5.9"
 nixpacks = "1.26.0"
 serde = { version = "1.0.204", features = ["derive"] }
+serde_yaml = "0.9.34"
 tokio = { version = "1.39.2", features = ["rt", "rt-multi-thread", "macros"] }
