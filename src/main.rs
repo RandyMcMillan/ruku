@@ -1,5 +1,8 @@
+use std::fs;
+
 use bollard::Docker;
 use clap::{Parser, Subcommand};
+use validator::Validate;
 
 use logger::Logger;
 use server_config::ServerConfig;
@@ -8,7 +11,7 @@ use crate::container::Container;
 use crate::deploy::Deploy;
 use crate::git::Git;
 use crate::misc::sanitize_app_name;
-use crate::model::Config;
+use crate::model::RukuConfig;
 
 mod container;
 mod deploy;
@@ -22,11 +25,12 @@ mod server_config;
 #[command(version, about = "A CLI app for managing your server.")]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Command,
 }
 
+/// Enum representing the various commands that can be executed by the CLI.
 #[derive(Subcommand)]
-enum Commands {
+enum Command {
     /// Show logs
     Logs,
     /// Set a configuration variable, e.g, VAR=12
@@ -82,10 +86,10 @@ async fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Logs => {
+        Command::Logs => {
             println!("Showing logs...");
         }
-        Commands::ConfigSet { var } => {
+        Command::ConfigSet { var } => {
             println!("Setting configuration: {}", var);
             // Parse `var` into key and value
             let parts: Vec<&str> = var.split('=').collect();
@@ -97,39 +101,40 @@ async fn main() {
                 log.error("Invalid format. Use KEY=VALUE");
             }
         }
-        Commands::ConfigGet { key } => {
+        Command::ConfigGet { key } => {
             println!("Getting configuration for: {}", key);
         }
-        Commands::Run => {
+        Command::Run => {
             log.section("Running application");
         }
-        Commands::Deploy => {
+        Command::Deploy => {
             log.section("Starting deployment");
         }
-        Commands::Stop => {
+        Command::Stop => {
             log.section("Stopping application...");
         }
-        Commands::Destroy => {
+        Command::Destroy => {
             println!("Destroying application...");
         }
-        Commands::GitHook { repo } => {
+        Command::GitHook { repo } => {
             git.cmd_git_hook(repo);
-            deploy(&log, repo, server_config).await;
+            deploy(&log, repo, &server_config).await;
         }
-        Commands::GitReceivePack { repo } => {
+        Command::GitReceivePack { repo } => {
             log.section("... RUKU ...");
+            let _ = get_ruku_config(&log, repo, &server_config);
             git.cmd_git_receive_pack(repo);
         }
-        Commands::GitUploadPack { repo } => {
+        Command::GitUploadPack { repo } => {
             log.section("... RUKU ...");
             git.cmd_git_upload_pack(repo);
         }
     }
 }
 
-async fn deploy(log: &Logger, repo: &str, server_config: ServerConfig) {
+async fn deploy(log: &Logger, repo: &str, server_config: &ServerConfig) {
     log.section("Deploying application");
-    let config = Config::default();
+    let config = get_ruku_config(log, repo, server_config);
     let docker = get_docker(log).await;
 
     let app = sanitize_app_name(repo);
@@ -162,4 +167,36 @@ async fn load_docker(log: &Logger) -> Docker {
         log.error("Ruku was unable to connect to docker");
         std::process::exit(1);
     })
+}
+
+fn get_ruku_config(log: &Logger, repo: &str, server_config: &ServerConfig) -> RukuConfig {
+    let repo_path = server_config.apps_root.join(&repo);
+
+    // Check for the presence of ruku.yml file
+    let config_path = repo_path.join("ruku.yml");
+    if !config_path.exists() {
+        log.error("ruku.yml file is missing in the repository");
+        std::process::exit(1);
+    }
+
+    // Parse the ruku.yml file
+    let config_content = fs::read_to_string(&config_path).unwrap_or_else(|e| {
+        log.error(&format!("Error reading ruku.yml file: {}", e));
+        std::process::exit(1);
+    });
+
+    let config: RukuConfig = serde_yaml::from_str(&config_content).unwrap_or_else(|e| {
+        log.error(&format!("Error parsing ruku.yml file: {}", e));
+        std::process::exit(1);
+    });
+
+    match config.validate() {
+        Ok(_) => (),
+        Err(e) => {
+            log.error(&format!("Error validating ruku.yml file: {}", e));
+            std::process::exit(1);
+        }
+    };
+
+    config
 }
