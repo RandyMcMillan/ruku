@@ -121,6 +121,7 @@ async fn main() {
         }
         Command::GitReceivePack { repo } => {
             log.section("... RUKU ...");
+            let _ = get_ruku_config(&log, repo, &server_config);
             git.cmd_git_receive_pack(repo);
         }
         Command::GitUploadPack { repo } => {
