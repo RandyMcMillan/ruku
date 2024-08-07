@@ -1,6 +1,6 @@
 use nixpacks::create_docker_image;
 use nixpacks::nixpacks::builder::docker::DockerBuilderOptions;
-use nixpacks::nixpacks::plan::{BuildPlan, generator::GeneratePlanOptions};
+use nixpacks::nixpacks::plan::{generator::GeneratePlanOptions, BuildPlan};
 
 use crate::container::Container;
 use crate::logger::Logger;

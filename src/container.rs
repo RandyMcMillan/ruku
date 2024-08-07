@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use bollard::container::{CreateContainerOptions, ListContainersOptions, StartContainerOptions};
-use bollard::Docker;
 use bollard::models::{
     ContainerCreateResponse, ContainerStateStatusEnum, ContainerSummary, HostConfig, PortBinding, PortMap,
 };
+use bollard::Docker;
 
 use crate::logger::Logger;
 use crate::misc::get_image_name_with_version;

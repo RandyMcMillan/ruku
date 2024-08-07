@@ -2,6 +2,7 @@ use std::fs;
 
 use bollard::Docker;
 use clap::{Parser, Subcommand};
+use validator::Validate;
 
 use logger::Logger;
 use server_config::ServerConfig;
@@ -189,11 +190,13 @@ fn get_ruku_config(log: &Logger, repo: &str, server_config: &ServerConfig) -> Ru
         std::process::exit(1);
     });
 
-    // Validate that there is an entry with port: int
-    if config.port <= 0 {
-        log.error("Invalid port number in ruku.yml file");
-        std::process::exit(1);
-    }
+    match config.validate() {
+        Ok(_) => (),
+        Err(e) => {
+            log.error(&format!("Error validating ruku.yml file: {}", e));
+            std::process::exit(1);
+        }
+    };
 
     config
 }
