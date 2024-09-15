@@ -170,7 +170,7 @@ async fn load_docker(log: &Logger) -> Docker {
 }
 
 fn get_ruku_config(log: &Logger, repo: &str, server_config: &ServerConfig) -> RukuConfig {
-    let repo_path = server_config.apps_root.join(&repo);
+    let repo_path = server_config.apps_root.join(repo);
 
     // Check for the presence of ruku.yml file
     let config_path = repo_path.join("ruku.yml");
