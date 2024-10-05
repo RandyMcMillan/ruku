@@ -9,14 +9,14 @@ homepage = "https://github.com/Joker666/ruku"
 repository = "https://github.com/Joker666/ruku"
 
 [dependencies]
-bollard = "0.17.0"
-clap = { version = "4.5.13", features = ["derive"] }
-cmd_lib = "1.9.4"
+bollard = "0.17.1"
+clap = { version = "4.5.19", features = ["derive"] }
+cmd_lib = "1.9.5"
 colored = "2.1.0"
 home = "0.5.9"
-nixpacks = "1.26.0"
+nixpacks = "1.29.0"
 port-selector = "0.1.6"
-serde = { version = "1.0.204", features = ["derive"] }
+serde = { version = "1.0.210", features = ["derive"] }
 serde_yaml = "0.9.34"
-tokio = { version = "1.39.2", features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }
 validator = { version = "0.18.1", features = ["derive"] }
