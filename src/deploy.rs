@@ -67,6 +67,7 @@ impl<'a> Deploy<'a> {
             docker_tls_verify: None,
             docker_output: None,
             add_host: vec![],
+            docker_cert_path: None,
         };
 
         create_docker_image(self.path, envs, &options, &build_options)
