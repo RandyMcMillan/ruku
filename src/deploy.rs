@@ -70,13 +70,10 @@ impl<'a> Deploy<'a> {
             docker_cert_path: None,
         };
 
-        create_docker_image(self.path, envs, &options, &build_options)
-            .await
-            .unwrap_or_else(|e| {
-                self.log
-                    .error(&format!("Error creating Docker image at path {}: {}", self.path, e));
-                std::process::exit(1);
-            });
+        if let Err(e) = create_docker_image(self.path, envs, &options, &build_options).await {
+            self.log.error(&format!("Error creating Docker image at path {}: {}", self.path, e));
+            std::process::exit(1);
+        }
 
         self.log.step(&format!(
             "Image created successfully with tag {}",
